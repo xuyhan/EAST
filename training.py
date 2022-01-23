@@ -1,10 +1,11 @@
 ## training.py - Contains code needed for training the models.
+import main
+
+# Pytorch libraries
+import torch
 
 # Basic python and ML Libraries
 import numpy as np
-# for ignoring warnings
-import warnings
-warnings.filterwarnings('ignore')
 
 # xml library for parsing xml files
 from xml.etree import ElementTree as et
@@ -14,8 +15,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 # torchvision libraries
-import torch
-import torchvision
 from torchvision import transforms as torchtrans
 
 # these are the helper libraries imported.
@@ -26,10 +25,7 @@ import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
 
 import os
-from typing import Dict
 from voc import VOCDataset
-
-import main
 
 def prepare_paths():
     labs = {}
@@ -116,16 +112,6 @@ data_loader_test = torch.utils.data.DataLoader(
     dataset_test, batch_size=16, shuffle=False, num_workers=4,
     collate_fn=utils.collate_fn)
 
-def apply_nms(orig_prediction: Dict[str, torch.Tensor], iou_thresh: int=0.3) -> Dict[str, torch.Tensor]:
-    # torchvision returns the indices of the bboxes to keep
-    keep = torchvision.ops.nms(orig_prediction['boxes'], orig_prediction['scores'], iou_thresh)
-
-    final_prediction = orig_prediction
-    final_prediction['boxes'] = final_prediction['boxes'][keep]
-    final_prediction['scores'] = final_prediction['scores'][keep]
-    final_prediction['labels'] = final_prediction['labels'][keep]
-    return final_prediction
-
 def torch_to_pil(img):
     return torchtrans.ToPILImage()(img).convert('RGB')
 
@@ -172,7 +158,7 @@ if __name__ == "__main__":
                 prediction = model(buffer.to(device))
 
             for j in range(batch_size):
-                nms_prediction = apply_nms(prediction[j], iou_thresh=0.1)
+                nms_prediction = main.apply_nms(prediction[j], iou_thresh=0.1)
                 plot_img_bbox(torch_to_pil(buffer[j]), nms_prediction)
 
             buffer = []

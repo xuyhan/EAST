@@ -1,4 +1,16 @@
 ## voc.py - Custom wrapper for getting Pytorch datasets.
+import main
+
+# We will be reading images using OpenCV
+import cv2
+
+# Basic python and ML Libraries
+import numpy as np
+
+# xml library for parsing xml files
+from xml.etree import ElementTree as et
+
+# Pytorch libraries
 import torch
 
 class VOCDataset(torch.utils.data.Dataset):
@@ -38,7 +50,7 @@ class VOCDataset(torch.utils.data.Dataset):
         for member in root.findall('object'):
             t = member.find('name').text
 
-            if t not in animals:
+            if t not in main.animals:
                 continue
 
             labels.append(self.classes.index(t))
