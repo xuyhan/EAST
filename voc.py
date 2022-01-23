@@ -1,9 +1,12 @@
+## voc.py - Custom wrapper for getting Pytorch datasets.
 import torch
 
 class VOCDataset(torch.utils.data.Dataset):
-    def __init__(self, imgs, annos, width, height, transforms=None):
+    ''' Implement __len__ and __getitem__ over Pytorch datasets. '''
+
+    def __init__(self, imgs, annotations, width, height, transforms=None) -> None:
         self.imgs = imgs
-        self.annos = annos
+        self.annotations = annotations
         self.width = width
         self.height = height
         self.transforms = transforms
@@ -11,9 +14,9 @@ class VOCDataset(torch.utils.data.Dataset):
         # classes: 0 index is reserved for background
         self.classes = ['horse', 'dog', 'sheep', 'bird', 'cat', 'cow']
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         image_path = self.imgs[idx]
-        anno_path = self.annos[idx]
+        anno_path = self.annotations[idx]
 
         # reading the images and converting them to correct size and color
         img = cv2.imread(image_path)
@@ -84,5 +87,5 @@ class VOCDataset(torch.utils.data.Dataset):
 
         return img_res, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.imgs)

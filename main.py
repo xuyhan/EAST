@@ -1,39 +1,31 @@
-# Basic python and ML Libraries
-import numpy as np
-# for ignoring warnings
-import warnings
-warnings.filterwarnings('ignore')
-
-# xml library for parsing xml files
-from xml.etree import ElementTree
-
-# matplotlib for visualization
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-
-# torchvision libraries
-import torch
-import torchvision
-from torchvision import transforms as torchtrans
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-
-# for image augmentations
-import albumentations as A
-from albumentations.pytorch.transforms import ToTensorV2
+## main.py - Runs the main simulation of the bounding boxes.
 
 # We will be reading images using OpenCV
 import cv2
-from random import randint, choice
+
+# Pytorch libraries
+import torch
+import torchvision
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+
+# Basic python and ML Libraries
+import numpy as np
 
 # For typing annotations
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 from nptyping import NDArray, Int8
 
+# For ignoring warnings
+import warnings
+warnings.filterwarnings('ignore')
+
 ANIMALS = ['horse', 'dog', 'sheep', 'bird', 'cat', 'cow']
+NUM_CLASSES = 6
 Color = Tuple[int, int, int]
+
 class ImageData:
-    ''' Han's model API. '''
-    def __init__(self, x0, y0, w, h, label):
+    ''' Han's model API attributes. '''
+    def __init__(self, x0: int, y0: int, w: int, h: int, label: str) -> None:
         self.x0 = x0
         self.y0 = y0
         self.w = w
@@ -44,44 +36,25 @@ def get_object_detection_model(num_classes: int) -> torchvision.models.detection
     ''' Returns predictor model we'll use to calculate the animals' bounding boxes. '''
     # load a model pre-trained pre-trained on COCO
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-
     # get number of input features for the classifier
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     # replace the pre-trained head with a new one
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-
     return model
 
-def apply_nms(orig_prediction, iou_thresh=0.3):
-    # torchvision returns the indices of the bboxes to keep
+def apply_nms(orig_prediction: Dict[torch.Tensor], iou_thresh: int=0.3) -> Dict[torch.Tensor]:
+    ''' Non-maximum suppression on the bounding boxes. '''
+    # torchvision returns the indices of the bounding boxes to keep
     keep = torchvision.ops.nms(orig_prediction['boxes'], orig_prediction['scores'], iou_thresh)
-
     final_prediction = orig_prediction
     final_prediction['boxes'] = final_prediction['boxes'][keep]
     final_prediction['scores'] = final_prediction['scores'][keep]
     final_prediction['labels'] = final_prediction['labels'][keep]
-
     return final_prediction
-
-batch_size = 5
-buffer = []
-
-def predict_mock() -> List[ImageData]:
-    ''' Mock data for CNN prediction (just to test bounding boxes) '''
-    example_labels = ['label1', 'label2', 'label3']
-    bboxes = []
-
-    for _ in range(randint(1, 5)):
-        x, y = randint(1, 100), randint(1, 300)
-        w, h = randint(1, 100), randint(1, 300)
-        label = choice(example_labels)
-        bboxes.append(ImageData(x, y, w, h, label))
-
-    return bboxes
 
 def draw_bounding_boxes(frame: NDArray[Int8], img_data: List[ImageData], color: Color = (255, 0, 0),
                         label_offset: int = 10, thickness: int = 2, pause: int = 50) -> None:
-    ''' Outputs a PNG with a bounding box. '''
+    ''' Renders a video frame with bounding boxes. '''
     for img in img_data:
         x, y, width, height, label = int(img.x0), int(img.y0), int(img.w), int(img.h), img.label
         frame = cv2.rectangle(frame, (x, y), (x + width, y + height), color, thickness)
@@ -90,7 +63,7 @@ def draw_bounding_boxes(frame: NDArray[Int8], img_data: List[ImageData], color: 
     cv2.imshow('Simulation', frame)
     cv2.waitKey(pause)
 
-def display_frames(video_path: str = 'cats_trimmed.mp4') -> None:
+def display_frames(video_path: str) -> None:
     ''' Render all frames in video with bounding boxes. '''
     vidcap = cv2.VideoCapture(video_path)
 
@@ -128,10 +101,11 @@ def display_frames(video_path: str = 'cats_trimmed.mp4') -> None:
 
 if __name__ == "__main__":
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    num_classes = 6
-    model = get_object_detection_model(num_classes)
+    
+    model = get_object_detection_model(NUM_CLASSES)
     model.to(device)
-    print('Loading model!')
     model.load_state_dict(torch.load('mymodel2.pth', map_location=torch.device('cpu')))
     model.eval()
-    display_frames()
+
+    # remember to put this file into this directory
+    display_frames('cats_trimmed.mp4')
