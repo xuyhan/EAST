@@ -5,13 +5,17 @@ from pymavlink import mavutil
 
 print_lock = threading.Lock()
 MAV_MODE_AUTO = 4
+
+
 class Drone(threading.Thread):
     def __init__(self, queue):
         threading.Thread.__init__(self, args=(), kwargs=None)
         self.queue = queue
         self.daemon = True
 
-        print("Connecting")
+        with print_lock:
+            print("Connecting")
+
         self.vehicle = connect("127.0.0.1:14540", wait_ready=True)
         self.home_position_set = False
 
@@ -23,11 +27,12 @@ class Drone(threading.Thread):
             print("Waiting for home position ...")
             time.sleep(1)
 
-        print(" Type: %s" % self.vehicle._vehicle_type)
-        print(" Armed: %s" % self.vehicle.armed)
-        print(" System status: %s" % self.vehicle.system_status.state)
-        print(" GPS: %s" % self.vehicle.gps_0)
-        print(" Alt: %s" % self.vehicle.location.global_relative_frame.alt)
+        with print_lock:
+            print(" Type: %s" % self.vehicle._vehicle_type)
+            print(" Armed: %s" % self.vehicle.armed)
+            print(" System status: %s" % self.vehicle.system_status.state)
+            print(" GPS: %s" % self.vehicle.gps_0)
+            print(" Alt: %s" % self.vehicle.location.global_relative_frame.alt)
 
         self.PX4setMode(MAV_MODE_AUTO)
         time.sleep(1)
@@ -101,11 +106,18 @@ class Drone(threading.Thread):
         nextwaypoint = self.vehicle.commands.next
         while nextwaypoint < len(self.vehicle.commands):
             command = self.queue.get()
-            print("Received command {}".format(command))
+
+            with print_lock:
+                print(" GPS: %s" % self.vehicle.gps_0)
+                print(" Alt: %s" % self.vehicle.location.global_relative_frame.alt)
+                print("Received command {}".format(command))
 
             if self.vehicle.commands.next > nextwaypoint:
                 display_seq = self.vehicle.commands.next + 1
-                print("Moving to waypoint %s" % display_seq)
+
+                with print_lock:
+                    print("Moving to waypoint %s" % display_seq)
+
                 nextwaypoint = self.vehicle.commands.next
 
             time.sleep(1)
@@ -143,3 +155,10 @@ if __name__ == '__main__':
     q = Queue()
     drone = Drone(q)
     drone.start()
+
+    time.sleep(0.1)
+
+    while True:
+        text = input("What would you like to send?: ")
+        drone.queue.put(text)
+        time.sleep(1)
