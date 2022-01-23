@@ -1,3 +1,5 @@
+## Copied everything from notebook
+
 # Basic python and ML Libraries
 import numpy as np
 # for ignoring warnings
