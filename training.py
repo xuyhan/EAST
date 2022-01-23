@@ -116,7 +116,7 @@ data_loader_test = torch.utils.data.DataLoader(
     dataset_test, batch_size=16, shuffle=False, num_workers=4,
     collate_fn=utils.collate_fn)
 
-def apply_nms(orig_prediction: Dict[torch.Tensor], iou_thresh: int=0.3) -> Dict[torch.Tensor]:
+def apply_nms(orig_prediction: Dict[str, torch.Tensor], iou_thresh: int=0.3) -> Dict[str, torch.Tensor]:
     # torchvision returns the indices of the bboxes to keep
     keep = torchvision.ops.nms(orig_prediction['boxes'], orig_prediction['scores'], iou_thresh)
 

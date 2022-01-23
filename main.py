@@ -42,7 +42,7 @@ def get_object_detection_model(num_classes: int) -> torchvision.models.detection
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
     return model
 
-def apply_nms(orig_prediction: Dict[torch.Tensor], iou_thresh: int=0.3) -> Dict[torch.Tensor]:
+def apply_nms(orig_prediction: Dict[str, torch.Tensor], iou_thresh: int=0.3) -> Dict[str, torch.Tensor]:
     ''' Non-maximum suppression on the bounding boxes. '''
     # torchvision returns the indices of the bounding boxes to keep
     keep = torchvision.ops.nms(orig_prediction['boxes'], orig_prediction['scores'], iou_thresh)

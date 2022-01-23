@@ -1,4 +1,5 @@
-# EAST
+# EAST - HackCambridge Atlas 2022
+[Endangered Animal Species Tracker](https://devpost.com/software/e-a-s-t)
 
 ## Installation
 ```bash
