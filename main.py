@@ -66,23 +66,40 @@ def draw_bounding_boxes(frame: NDArray[Int8], img_data: List[ImageData], color: 
 def display_frames(video_path: str) -> None:
     ''' Render all frames in video with bounding boxes. '''
     vidcap = cv2.VideoCapture(video_path)
+    counter = 0
+    INTERVAL = 3
+    MIN_SCORE = 0.7
+
+    boxes = []
+    labels = []
 
     while True:
         success, frame = vidcap.read()
         if not success:
             break
 
+        counter += 1
+
         img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB).astype(np.float32)
+        orig_height, orig_width = img_rgb.shape[0], img_rgb.shape[1]
+        img_rgb /= 255.0
         img_res = cv2.resize(img_rgb, (480, 480), cv2.INTER_AREA)
-        img_res /= 255.0
+        scale_h, scale_w = orig_height / 480, orig_width / 480
         img = np.array(img_res)
         img = np.transpose(img, (2, 0, 1))
 
-        d = model([torch.tensor(img).to(device)])[0]
-        d = apply_nms(d, iou_thresh=0.01)
+        if counter % INTERVAL == 0:
+            d = model([torch.tensor(img).to(device)])[0]
+            d = apply_nms(d, iou_thresh=0.01)
 
-        boxes = d['boxes']
-        labels = d['labels']
+            boxes = []
+            labels = []
+
+            for j, score in enumerate((d['scores'])):
+                if score > MIN_SCORE:
+                    boxes.append(d['boxes'][j])
+                    labels.append(d['labels'][j])
+
         img_data = []
 
         for i, curr_boxes in enumerate(boxes):
@@ -91,10 +108,10 @@ def display_frames(video_path: str) -> None:
             h = y2 - y1
             x = x1
             y = y1
-            data = ImageData(x, y, w, h, ANIMALS[labels[i]])
+            data = ImageData(x * scale_w, y * scale_h, w * scale_w, h * scale_h, ANIMALS[labels[i]])
             img_data.append(data)
 
-        draw_bounding_boxes(img_res, img_data)
+        draw_bounding_boxes(img_rgb, img_data)
 
     vidcap.release()
     cv2.destroyAllWindows()
@@ -104,8 +121,8 @@ if __name__ == "__main__":
     
     model = get_object_detection_model(NUM_CLASSES)
     model.to(device)
-    model.load_state_dict(torch.load('mymodel2.pth', map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load('model.pth', map_location=torch.device('cpu')))
     model.eval()
 
     # remember to put this file into this directory
-    display_frames('cats_trimmed.mp4')
+    display_frames('horses_and_dogs.mp4')
