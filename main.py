@@ -72,6 +72,7 @@ def display_frames(video_path: str) -> None:
 
     boxes = []
     labels = []
+    scores = []
 
     while True:
         success, frame = vidcap.read()
@@ -94,11 +95,13 @@ def display_frames(video_path: str) -> None:
 
             boxes = []
             labels = []
+            scores = []
 
             for j, score in enumerate((d['scores'])):
                 if score > MIN_SCORE:
                     boxes.append(d['boxes'][j])
                     labels.append(d['labels'][j])
+                    scores.append(score.detach().item())
 
         img_data = []
 
@@ -108,7 +111,7 @@ def display_frames(video_path: str) -> None:
             h = y2 - y1
             x = x1
             y = y1
-            data = ImageData(x * scale_w, y * scale_h, w * scale_w, h * scale_h, ANIMALS[labels[i]])
+            data = ImageData(x * scale_w, y * scale_h, w * scale_w, h * scale_h, ANIMALS[labels[i]] + ' ' + str(scores[i])[:4])
             img_data.append(data)
 
         draw_bounding_boxes(img_rgb, img_data)
@@ -125,4 +128,4 @@ if __name__ == "__main__":
     model.eval()
 
     # remember to put this file into this directory
-    display_frames('horses_and_dogs.mp4')
+    display_frames('sheep.mp4')
