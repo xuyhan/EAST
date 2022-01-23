@@ -1,3 +1,5 @@
 .DS_Store
 VOCdevkit/
 __pycache__/
+*.mp4
+*.pth
